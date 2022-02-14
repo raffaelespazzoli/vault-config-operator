@@ -70,7 +70,7 @@ Here are the steps:
   }
   ```
 
-6. Implement the controller, under normal circumstances this should be straightfornad, just use this code:
+6. Implement the controller, under normal circumstances this should be straightforward, just use this code:
 
   ```golang
     type MyVaultTypeReconciler struct {

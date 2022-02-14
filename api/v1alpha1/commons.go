@@ -229,6 +229,20 @@ func (credentials *RootCredentialConfig) validateEitherFromVaultSecretOrFromSecr
 	return nil
 }
 
+func (credentials *RootCredentialConfig) validateEitherFromVaultSecretOrFromSecret() error {
+	count := 0
+	if credentials.Secret != nil {
+		count++
+	}
+	if credentials.VaultSecret != nil {
+		count++
+	}
+	if count != 1 {
+		return errors.New("Only one of only one of spec.rootCredentials.vaultSecret or spec.rootCredentials.secret can be specified.")
+	}
+	return nil
+}
+
 func GetFinalizer(instance client.Object) string {
 	return "controller-" + strings.ToLower(instance.GetObjectKind().GroupVersionKind().Kind)
 }

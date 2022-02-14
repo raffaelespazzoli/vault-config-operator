@@ -16,4 +16,6 @@ resources:
 - redhatcop_v1alpha1_rabbitmqsecretenginerole.yaml
 - redhatcop_v1alpha1_pkisecretengineconfig.yaml
 - redhatcop_v1alpha1_pkisecretenginerole.yaml
+- redhatcop_v1alpha1_artifactorysecretengineconfig.yaml
+- redhatcop_v1alpha1_artifactorysecretenginerole.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

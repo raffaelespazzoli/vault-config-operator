@@ -8,6 +8,44 @@ metadata:
 webhooks:
 - admissionReviewVersions:
   - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-redhatcop-redhat-io-v1alpha1-artifactorysecretengineconfig
+  failurePolicy: Fail
+  name: martifactorysecretengineconfig.kb.io
+  rules:
+  - apiGroups:
+    - redhatcop.redhat.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - artifactorysecretengineconfigs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-redhatcop-redhat-io-v1alpha1-artifactorysecretenginerole
+  failurePolicy: Fail
+  name: martifactorysecretenginerole.kb.io
+  rules:
+  - apiGroups:
+    - redhatcop.redhat.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - artifactorysecretengineroles
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
   - v1beta1
   clientConfig:
     service:
@@ -313,6 +351,45 @@ metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-redhatcop-redhat-io-v1alpha1-artifactorysecretengineconfig
+  failurePolicy: Fail
+  name: vartifactorysecretengineconfig.kb.io
+  rules:
+  - apiGroups:
+    - redhatcop.redhat.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - artifactorysecretengineconfigs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-redhatcop-redhat-io-v1alpha1-artifactorysecretenginerole
+  failurePolicy: Fail
+  name: vartifactorysecretenginerole.kb.io
+  rules:
+  - apiGroups:
+    - redhatcop.redhat.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - UPDATE
+    resources:
+    - artifactorysecretengineroles
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   - v1beta1

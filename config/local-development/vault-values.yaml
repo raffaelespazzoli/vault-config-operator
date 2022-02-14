@@ -65,10 +65,23 @@ server:
           cd /usr/local/libexec/vault
           curl -L -o vault-plugin-secrets-github-linux-amd64 https://github.com/martinbaillie/vault-plugin-secrets-github/releases/download/v1.3.0/vault-plugin-secrets-github-linux-amd64 
           chmod +x vault-plugin-secrets-github-linux-amd64
-          curl -L -o SHA256SUMS https://github.com/martinbaillie/vault-plugin-secrets-github/releases/download/v1.3.0/SHA256SUMS
+          curl -L -o github-plugin-SHA256SUMS https://github.com/martinbaillie/vault-plugin-secrets-github/releases/download/v1.3.0/SHA256SUMS
       volumeMounts:
         - name: plugins
           mountPath: /usr/local/libexec/vault
+    - name: artifactory-module-downloader
+      image: registry.access.redhat.com/ubi8/ubi:8.5
+      command: 
+      - /bin/bash
+      - -c
+      - | 
+          cd /usr/local/libexec/vault
+          curl -L https://github.com/jfrog/artifactory-secrets-plugin/releases/download/v0.1.0/artifactory-secrets-plugin_0.1.0_linux_amd64.tar.gz | tar -xzO artifactory-secrets-plugin_0.1.0_linux_amd64/artifactory-secrets-plugin_0.1.0_linux_amd64 > artifactory-secrets-plugin
+          chmod +x artifactory-secrets-plugin
+          sha256sum artifactory-secrets-plugin | cut -d ' ' -f 1 > artifactory-plugin-SHA256SUMS 
+      volumeMounts:
+        - name: plugins
+          mountPath: /usr/local/libexec/vault          
 
     - name: utility-downloader
       image: registry.access.redhat.com/ubi8/ubi:8.5
@@ -168,8 +181,8 @@ server:
                   echo vault-plugin-secrets-github plugin already installed
                   sleep 5
                 else
-                  echo SHA256SUM $(grep vault-plugin-secrets-github-linux-amd64 /usr/local/libexec/vault/SHA256SUMS | cut -d' ' -f1)
-                  vault plugin register -sha256=$(grep vault-plugin-secrets-github-linux-amd64 /usr/local/libexec/vault/SHA256SUMS | cut -d' ' -f1) -command=vault-plugin-secrets-github-linux-amd64 -args="--tls-skip-verify=true" secret vault-plugin-secrets-github
+                  echo SHA256SUM $(grep vault-plugin-secrets-github-linux-amd64 /usr/local/libexec/vault/github-plugin-SHA256SUMS | cut -d' ' -f1)
+                  vault plugin register -sha256=$(grep vault-plugin-secrets-github-linux-amd64 /usr/local/libexec/vault/github-plugin-SHA256SUMS | cut -d' ' -f1) -command=vault-plugin-secrets-github-linux-amd64 -args="--tls-skip-verify=true" secret vault-plugin-secrets-github
                 fi
               else
                 echo vault still sealed
@@ -182,4 +195,78 @@ server:
         - name: plugins
           mountPath: /usr/local/libexec/vault
         - name: vault-root-token
-          mountPath: /vault-root-token  
+          mountPath: /vault-root-token
+    - name: artifactory-module-loader
+      image: registry.connect.redhat.com/hashicorp/vault:1.9.2-ubi
+      env: 
+      - name: VAULT_ADDR
+        value: https://vault.vault.svc:8200
+      - name: VAULT_CACERT
+        value: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt  
+      command: 
+      - /bin/bash
+      - -c
+      - | 
+          while true; do
+            sleep 5
+            if [[ -f /vault-root-token/root_token ]]; then
+              export VAULT_TOKEN=$(cat /vault-root-token/root_token)
+              if [[ $(vault status | grep "Sealed" | grep "false") ]]; then
+                if [[ $(vault plugin list secret | grep vault-plugin-secrets-artifactory) ]]; then
+                  echo vault-plugin-secrets-artifactory plugin already installed
+                  sleep 5
+                else
+                  echo SHA256SUM $(cat /usr/local/libexec/vault/artifactory-plugin-SHA256SUMS)
+                  vault plugin register -sha256=$(cat /usr/local/libexec/vault/artifactory-plugin-SHA256SUMS) -command=artifactory-secrets-plugin -args="--tls-skip-verify=true" secret vault-plugin-secrets-artifactory
+                fi
+              else
+                echo vault still sealed
+              fi    
+            else 
+              echo root token not initialized yet    
+            fi    
+          done
+      volumeMounts:
+        - name: plugins
+          mountPath: /usr/local/libexec/vault
+        - name: vault-root-token
+          mountPath: /vault-root-token
+    - name: vault-admin-initializer
+      image: registry.connect.redhat.com/hashicorp/vault:1.9.2-ubi
+      env: 
+      - name: VAULT_ADDR
+        value: https://vault.vault.svc:8200
+      - name: VAULT_CACERT
+        value: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt  
+      command: 
+      - /bin/bash
+      - -c
+      - | 
+        while true; do
+          sleep 5
+          if [[ -f /vault-root-token/root_token ]]; then
+            export VAULT_TOKEN=$(cat /vault-root-token/root_token)
+            if [[ $(vault status | grep "Sealed" | grep "false") ]]; then
+              if [[ ! $(vault policy list | grep vault-admin) ]]; then
+                vault auth enable kubernetes
+                vault write auth/kubernetes/config token_reviewer_jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token kubernetes_host=https://kubernetes.default.svc:443 kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt 
+                vault write auth/kubernetes/role/policy-admin bound_service_account_names=default bound_service_account_namespaces=vault-admin policies=vault-admin ttl=1h
+                cat << EOF | vault policy write vault-admin -
+                  path "/*" {
+                    capabilities = ["create", "read", "update", "delete", "list","sudo"]
+                  }
+        EOF
+              else 
+                echo vault admin already configured
+                sleep 5
+              fi      
+            else
+              echo vault still sealed
+            fi    
+          else 
+            echo root token not initialized yet    
+          fi    
+        done      
+      volumeMounts:
+        - name: vault-root-token
+          mountPath: /vault-root-token                      

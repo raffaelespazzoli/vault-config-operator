@@ -20,7 +20,6 @@
   - [Development](#development)
     - [Running the operator locally](#running-the-operator-locally)
       - [Deploy a Vault instance](#deploy-a-vault-instance)
-      - [Configure an Kubernetes Authentication mount point](#configure-an-kubernetes-authentication-mount-point)
       - [Run the operator](#run-the-operator)
     - [Test Manually](#test-manually)
     - [Test helm chart locally](#test-helm-chart-locally)
@@ -209,29 +208,13 @@ oc new-project vault
 oc adm policy add-role-to-user admin -z vault -n vault
 export cluster_base_domain=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
 helm upgrade vault hashicorp/vault -i --create-namespace -n vault --atomic -f ./config/local-development/vault-values.yaml --set server.route.host=vault-vault.apps.${cluster_base_domain}
+export VAULT_ADDR=https://vault-vault.apps.${cluster_base_domain}
+export VAULT_TOKEN=$(oc get secret vault-init -n vault -o jsonpath='{.data.root_token}' | base64 -d )
 ```
 
 > Note: you may need to manually remove the `service.beta.openshift.io/serving-cert-secret-name: vault-server-tls` annotation from the Service `vault-internal` and force the recreation of the service serving certificate since the annotation gets applied to both `vault` and `vault-internal` Services by the helm chart. The implementation expects the vault.vault.svc certificate. See [server-service.yaml](https://github.com/hashicorp/vault-helm/blob/main/templates/server-service.yaml) and [server-headless-service.yaml](https://github.com/hashicorp/vault-helm/blob/main/templates/server-headless-service.yaml).
 
-#### Configure an Kubernetes Authentication mount point
-
-All the configuration made by the operator need to authenticate via a Kubernetes Authentication. So you need a root Kubernetes Authentication mount point and role. The you can create more roles via the operator.
-If you don't have a root mount point and role, you can create them as follows:
-
-```shell
-oc new-project vault-admin
-export cluster_base_domain=$(oc get dns cluster -o jsonpath='{.spec.baseDomain}')
-export VAULT_ADDR=https://vault-vault.apps.${cluster_base_domain}
-export VAULT_TOKEN=$(oc get secret vault-init -n vault -o jsonpath='{.data.root_token}' | base64 -d )
-# this policy is intentionally broad to allow to test anything in Vault. In a real life scenario this policy would be scoped down.
-vault policy write -tls-skip-verify vault-admin  ./config/local-development/vault-admin-policy.hcl
-vault auth enable -tls-skip-verify kubernetes
-export sa_secret_name=$(oc get sa default -n vault -o jsonpath='{.secrets[*].name}' | grep -o '\b\w*\-token-\w*\b')
-oc get secret ${sa_secret_name} -n vault -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/ca.crt
-vault write -tls-skip-verify auth/kubernetes/config token_reviewer_jwt="$(oc serviceaccounts get-token vault -n vault)" kubernetes_host=https://kubernetes.default.svc:443 kubernetes_ca_cert=@/tmp/ca.crt
-vault write -tls-skip-verify auth/kubernetes/role/policy-admin bound_service_account_names=default bound_service_account_namespaces=vault-admin policies=vault-admin ttl=1h
-export accessor=$(vault read -tls-skip-verify -format json sys/auth | jq -r '.data["kubernetes/"].accessor')
-```
+When Vault comes up correctly the `default` service account of the `vault-admin` namespace (you may have to create this namespace) is configured as Vault administrator (all privileges). From there you can start you declarative configuration.
 
 #### Run the operator
 

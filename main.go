@@ -33,9 +33,10 @@ import (
 
 	"github.com/redhat-cop/operator-utils/pkg/util"
 
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	redhatcopv1alpha1 "github.com/redhat-cop/vault-config-operator/api/v1alpha1"
 	"github.com/redhat-cop/vault-config-operator/controllers"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -215,6 +216,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.ArtifactorySecretEngineConfigReconciler{
+		ReconcilerBase: util.NewReconcilerBase(mgr.GetClient(), mgr.GetScheme(), mgr.GetConfig(), mgr.GetEventRecorderFor("ArtifactorySecretEngineConfig"), mgr.GetAPIReader()),
+		Log:            ctrl.Log.WithName("controllers").WithName("ArtifactorySecretEngineConfig"),
+		ControllerName: "ArtifactorySecretEngineConfig",
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ArtifactorySecretEngineConfig")
+		os.Exit(1)
+	}
+	if err = (&controllers.ArtifactorySecretEngineRoleReconciler{
+		ReconcilerBase: util.NewReconcilerBase(mgr.GetClient(), mgr.GetScheme(), mgr.GetConfig(), mgr.GetEventRecorderFor("ArtifactorySecretEngineRole"), mgr.GetAPIReader()),
+		Log:            ctrl.Log.WithName("controllers").WithName("ArtifactorySecretEngineRole"),
+		ControllerName: "ArtifactorySecretEngineRole",
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ArtifactorySecretEngineRole")
+		os.Exit(1)
+	}
+
 	if webhooks, ok := os.LookupEnv("ENABLE_WEBHOOKS"); !ok || webhooks != "false" {
 		if err = (&redhatcopv1alpha1.RandomSecret{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "RandomSecret")
@@ -281,8 +299,18 @@ func main() {
 			os.Exit(1)
 		}
 
+		if err = (&redhatcopv1alpha1.ArtifactorySecretEngineConfig{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "ArtifactorySecretEngineConfig")
+			os.Exit(1)
+		}
+		if err = (&redhatcopv1alpha1.ArtifactorySecretEngineRole{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "ArtifactorySecretEngineRole")
+			os.Exit(1)
+		}
+
 		mgr.GetWebhookServer().Register("/validate-redhatcop-redhat-io-v1alpha1-rabbitmqsecretengineconfig", &webhook.Admission{Handler: &redhatcopv1alpha1.RabbitMQSecretEngineConfigValidation{Client: mgr.GetClient()}})
 	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

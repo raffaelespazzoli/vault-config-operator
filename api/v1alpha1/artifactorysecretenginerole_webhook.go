@@ -27,9 +27,9 @@ import (
 )
 
 // log is for logging in this package.
-var databasesecretenginerolelog = logf.Log.WithName("databasesecretenginerole-resource")
+var artifactorysecretenginerolelog = logf.Log.WithName("artifactorysecretenginerole-resource")
 
-func (r *DatabaseSecretEngineRole) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *ArtifactorySecretEngineRole) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -37,45 +37,45 @@ func (r *DatabaseSecretEngineRole) SetupWebhookWithManager(mgr ctrl.Manager) err
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-//+kubebuilder:webhook:path=/mutate-redhatcop-redhat-io-v1alpha1-databasesecretenginerole,mutating=true,failurePolicy=fail,sideEffects=None,groups=redhatcop.redhat.io,resources=databasesecretengineroles,verbs=create,versions=v1alpha1,name=mdatabasesecretenginerole.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:path=/mutate-redhatcop-redhat-io-v1alpha1-artifactorysecretenginerole,mutating=true,failurePolicy=fail,sideEffects=None,groups=redhatcop.redhat.io,resources=artifactorysecretengineroles,verbs=create,versions=v1alpha1,name=martifactorysecretenginerole.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &DatabaseSecretEngineRole{}
+var _ webhook.Defaulter = &ArtifactorySecretEngineRole{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *DatabaseSecretEngineRole) Default() {
-	databasesecretenginerolelog.Info("default", "name", r.Name)
+func (r *ArtifactorySecretEngineRole) Default() {
+	artifactorysecretenginerolelog.Info("default", "name", r.Name)
+
 	if !controllerutil.ContainsFinalizer(r, GetFinalizer(r)) {
 		controllerutil.AddFinalizer(r, GetFinalizer(r))
 	}
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-redhatcop-redhat-io-v1alpha1-databasesecretenginerole,mutating=false,failurePolicy=fail,sideEffects=None,groups=redhatcop.redhat.io,resources=databasesecretengineroles,verbs=update,versions=v1alpha1,name=vdatabasesecretenginerole.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:path=/validate-redhatcop-redhat-io-v1alpha1-artifactorysecretenginerole,mutating=false,failurePolicy=fail,sideEffects=None,groups=redhatcop.redhat.io,resources=artifactorysecretengineroles,verbs=update,versions=v1alpha1,name=vartifactorysecretenginerole.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &DatabaseSecretEngineRole{}
+var _ webhook.Validator = &ArtifactorySecretEngineRole{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *DatabaseSecretEngineRole) ValidateCreate() error {
-	databasesecretenginerolelog.Info("validate create", "name", r.Name)
+func (r *ArtifactorySecretEngineRole) ValidateCreate() error {
+	artifactorysecretenginerolelog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *DatabaseSecretEngineRole) ValidateUpdate(old runtime.Object) error {
-	databasesecretenginerolelog.Info("validate update", "name", r.Name)
+func (r *ArtifactorySecretEngineRole) ValidateUpdate(old runtime.Object) error {
+	artifactorysecretenginerolelog.Info("validate update", "name", r.Name)
 
-	// the path cannot be updated
-	if r.Spec.Path != old.(*DatabaseSecretEngineRole).Spec.Path {
+	if r.Spec.Path != old.(*ArtifactorySecretEngineRole).Spec.Path {
 		return errors.New("spec.path cannot be updated")
 	}
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *DatabaseSecretEngineRole) ValidateDelete() error {
-	databasesecretenginerolelog.Info("validate delete", "name", r.Name)
+func (r *ArtifactorySecretEngineRole) ValidateDelete() error {
+	artifactorysecretenginerolelog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
