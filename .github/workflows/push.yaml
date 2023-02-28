@@ -10,7 +10,7 @@ on:
 jobs:
   shared-operator-workflow:
     name: shared-operator-workflow
-    uses: raffaelespazzoli/github-workflows-operators/.github/workflows/pr-operator.yml@cosign
+    uses: raffaelespazzoli/github-workflows-operators/.github/workflows/release-operator.yml@cosign
     secrets:
       COMMUNITY_OPERATOR_PAT: ${{ secrets.COMMUNITY_OPERATOR_PAT }}
       REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
