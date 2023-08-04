@@ -637,3 +637,7 @@ operator-sdk cleanup vault-config-operator -n vault-config-operator
 oc delete operatorgroup operator-sdk-og
 oc delete catalogsource vault-config-operator-catalog
 ```
+
+
+
+ciao
